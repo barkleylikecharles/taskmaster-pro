@@ -13,6 +13,8 @@ var createTask = function(taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+// check due date
+auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -44,40 +46,53 @@ var loadTasks = function() {
 var saveTasks = function() {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 };
+var auditTask = function(taskEl){
+  var date = $(taskEl).find("span").text().trim();
+
+    // convert to moment object at 5:00pm
+  var time = moment(date, "L").set("hour", 17);
+    // this should print out an object for the value of the date variable, but at 5:00pm of that date
+  $(taskEl).removeClass("list-group-item-warning list group item danger");
+
+  if (moment().isAfter(time)){
+    $(taskEl).addClass("list-group-item-danger");
+  }
+  else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+
+};
 $(".card .list-group").sortable({
   connectWith: $(".card .list-group"),
   scroll: false,
   tolerance: "pointer",
   helper: "clone",
-  activate: function(event) {
-    console.log("activate", this);
+  activate: function(event, ui) {
+    console.log(ui);
   },
-  deactivate: function(event) {
-    console.log("deactivate", this);
+  deactivate: function(event, ui) {
+    console.log(ui);
   },
   over: function(event) {
-    console.log("over", event.target);
+    console.log(event);
   },
   out: function(event) {
-    console.log("out", event.target);
+    console.log(event);
   },
-  update: function(event) {
+  update: function() {
     var tempArr = [];
 
    $(this).children().each(function(){
-     var text = $(this)
+     tempArr.push ({
+    text: $(this)
      .find("p")
      .text()
-     .trim();
+     .trim(),
     
-     var date = $(this)
+  date: $(this)
     .find("span")
     .text()
-    .trim();
-
-    tempArr.push({
-      text: text,
-      date: date
+    .trim()
     });
    });
    
@@ -89,9 +104,30 @@ var arrName = $(this)
 // update array on tasks object and save
 tasks[arrName] = tempArr;
 saveTasks();
+  },
+  stop: function(event) {
+    $(this).removeClases("dropover");
   }
 });
 
+$("#trash").droppable({
+  accept: ".card .list-group-item",
+  tolerance: "touch",
+  drop: function(event, ui) {
+    ui.draggable.remove();
+    console.log("drop");
+  },
+  over: function(event, ui) {
+    console.log("over");
+  },
+  out: function(event, ui) {
+    console.log("out");
+  }
+});
+
+$("#modalDueDate").datepicker({
+  minDate: 1
+});
 // modal was triggered
 $("#task-form-modal").on("show.bs.modal", function() {
   // clear values
@@ -125,6 +161,7 @@ $("#task-form-modal .btn-primary").click(function() {
     saveTasks();
   }
 });
+
 $(".list-group").on("click", "p", function() {
   var text = $(this)
   .text()
@@ -174,14 +211,19 @@ $(".list-group").on("click", "span", function() {
   $(this).replaceWith(dateInput);
 
   // automatically focus on new element
-  dateInput.trigger("focus");
+  dateInput.datepicker({
+    minDate: 1,
+    onClose: function() {
+      $(this).trigger("change");
+    }
+});
+dateInput.trigger("focus");
 });
 // value of due date was changed
-$(".list-group").on("blur", "input[type='text']", function() {
+$(".list-group").on("change", "input[type='text']", function() {
   // get current text
   var date = $(this)
     .val()
-    .trim();
 
 
   // get the parent ul's id attribute
@@ -205,6 +247,8 @@ $(".list-group").on("blur", "input[type='text']", function() {
 
   // replace input with span element
   $(this).replaceWith(taskSpan);
+
+  auditTaks($(taskSpan).closest(".list-group-item"));
 });
 // utton in modal was clicked
 
@@ -220,38 +264,5 @@ $("#remove-tasks").on("click", function() {
 // load tasks for the first time
 loadTasks();
 
-// $(".card .list-group").sortable({
-//   connectWith: $(".card .list-group"),
-//   scroll: false,
-//   tolerance: "pointer",
-//   helper: "clone",
-//   activate: function(event) {
-//     console.log("activate", this);
-//   },
-//   deactivate: function(event) {
-//     console.log("deactivate", this);
-//   },
-//   over: function(event) {
-//     console.log("over", event.target);
-//   },
-//   out: function(event) {
-//     console.log("out", event.target);
-//   },
-//   update: function(event) {
-//     console.log("update", this);
-//   }
 ;
-$("#trash").droppable({
-  accept: ".card .list-group-item",
-  tolerance: "touch",
-  drop: function(event, ui) {
-    ui.draggable.remove();
-    console.log("drop");
-  },
-  over: function(event, ui) {
-    console.log("over");
-  },
-  out: function(event, ui) {
-    console.log("out");
-  }
-});
+
