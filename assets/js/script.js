@@ -68,15 +68,19 @@ $(".card .list-group").sortable({
   tolerance: "pointer",
   helper: "clone",
   activate: function(event, ui) {
-    console.log(ui);
+    $(this).addClass("dropover")
+    $(".bottom-trash").addClass("bottom-trash-drag")
   },
   deactivate: function(event, ui) {
-    console.log(ui);
+    $(this).removeClass("dropover")
+    $(".bottom-trash").removeClass("bottom-trash-drag")
   },
   over: function(event) {
+    $(event.target).addClass("dropover-active")
     console.log(event);
   },
   out: function(event) {
+    $(event.target).removeClass("dropover-active")
     console.log(event);
   },
   update: function() {
@@ -104,10 +108,8 @@ var arrName = $(this)
 // update array on tasks object and save
 tasks[arrName] = tempArr;
 saveTasks();
-  },
-  stop: function(event) {
-    $(this).removeClases("dropover");
   }
+  
 });
 
 $("#trash").droppable({
@@ -115,12 +117,15 @@ $("#trash").droppable({
   tolerance: "touch",
   drop: function(event, ui) {
     ui.draggable.remove();
+    $(".bottom-trash").removeClass("bottom-trash-active")
     console.log("drop");
   },
   over: function(event, ui) {
+    $(".bottom-trash").addClass("button-trash-active")
     console.log("over");
   },
   out: function(event, ui) {
+    $(".bottom-trash").removeClass("bottom-trash-active")
     console.log("out");
   }
 });
@@ -266,3 +271,8 @@ loadTasks();
 
 ;
 
+setInterval(function() {
+  $(".card .list-group-item").each(function(index, el) {
+    auditTask(el);
+  })
+}, (1000 * 60) * 30);
